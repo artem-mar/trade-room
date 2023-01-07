@@ -4,16 +4,20 @@ export const parseTime = (num) => {
   return [minutes, seconds].join(' : ');
 };
 
-export const getSecondsLeft = (startTime) => {
+export const getSecondsLeft = (startTime, timerDuration = 120) => {
   const timeDifferenceSec = Math.trunc((Date.now() - startTime) / 1000);
-  const secondsLeft = 120 - (timeDifferenceSec % 120);
+  const secondsLeft = timerDuration - (timeDifferenceSec % timerDuration);
   return secondsLeft;
 };
 
-export const getCurrentId = (ids, startingId, startTime) => {
+export const getCurrentId = (items, startingId, startTime) => {
+  const ids = items.map((i) => i.id);
   const timeDifferenceSec = Math.trunc((Date.now() - startTime) / 1000);
   const periodsNumber = Math.trunc(timeDifferenceSec / 120);
   const startingIdIndex = ids.indexOf(startingId);
-  const currentIdIndex = startingIdIndex + (periodsNumber % ids.length);
+  const swipes = periodsNumber % ids.length;
+  const currentIdIndex = startingIdIndex + swipes >= ids.length
+    ? swipes - (ids.length - startingIdIndex)
+    : startingIdIndex + swipes;
   return ids[currentIdIndex];
 };
