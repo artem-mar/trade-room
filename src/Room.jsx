@@ -50,6 +50,7 @@ const Room = () => {
   const [activeTraderId, setActiveTraderId] = useState(null);
   const [startTime, setStartTime] = useState(Date.now());
   const [traders, setTraders] = useState([]);
+  const [error, setError] = useState(null);
 
   const setNextTraderId = () => {
     const ids = traders.map(({ id }) => id);
@@ -60,14 +61,19 @@ const Room = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data } = await axios.get(
-        'https://trade-room-7f3ef-default-rtdb.europe-west1.firebasedatabase.app/roomInfo.json',
-      );
-      setActiveTraderId(
-        getCurrentId(data.traders, data.timerInfo.startUserId, data.timerInfo.startTime),
-      );
-      setStartTime(data.timerInfo.startTime);
-      setTraders(data.traders);
+      try {
+        const { data } = await axios.get(
+          'https://trade-room-7f3ef-default-rtdb.europe-west1.firebasedatabase.app/roomInfo.json',
+        );
+        setActiveTraderId(
+          getCurrentId(data.traders, data.timerInfo.startUserId, data.timerInfo.startTime),
+        );
+        setStartTime(data.timerInfo.startTime);
+        setTraders(data.traders);
+      } catch (err) {
+        setError(err);
+        throw err;
+      }
     };
     fetchData();
   }, [startTime, activeTraderId]);
@@ -102,6 +108,7 @@ const Room = () => {
       setStartTime(Date.now());
       setActiveTraderId(newId);
     } catch (err) {
+      /* eslint-disable-next-line no-console */
       console.log(err.message);
     }
   };
@@ -117,56 +124,61 @@ const Room = () => {
           <b>Тестовые торги на аппарат ЛОТОС №3384342 (дата, время)</b>
         </div>
         <hr />
-        <table className="table table-striped caption-top fs-6 fw-weight-light w-100">
-          <caption className="text-danger">
-            Уважаемые участники, во время вашего хода вы можете изменить параметры торгов, указанных
-            в таблице:
-          </caption>
-          <thead className="text-primary text-uppercase align-middle">
-            <tr>
-              <td className="min-vw-25">Ход</td>
-              {tradersTable.id}
-            </tr>
-            <tr>
-              <td>Параметры и требования</td>
-              {tradersTable.name}
-            </tr>
-          </thead>
-          <tbody className="table-group-divider align-middle">
-            <tr>
-              <td>Наличие комплекса мероприятий, повышающих стандарты качества изготовления</td>
-              {tradersTable.qualityImprovement}
-            </tr>
+        {error && <p className="fs-4">Ошибка соединения. Проверьте подключение к сети</p>}
+        {!error && (
+        <>
+          <table className="table table-striped caption-top fs-6 fw-weight-light w-100">
+            <caption className="text-danger">
+              Уважаемые участники, во время вашего хода вы можете изменить параметры торгов,
+              указанных в таблице:
+            </caption>
+            <thead className="text-primary text-uppercase align-middle">
+              <tr>
+                <td className="min-vw-25">Ход</td>
+                {tradersTable.id}
+              </tr>
+              <tr>
+                <td>Параметры и требования</td>
+                {tradersTable.name}
+              </tr>
+            </thead>
+            <tbody className="table-group-divider align-middle">
+              <tr>
+                <td>Наличие комплекса мероприятий, повышающих стандарты качества изготовления</td>
+                {tradersTable.qualityImprovement}
+              </tr>
 
-            <tr>
-              <td>Срок изготовления лота, дней</td>
-              {tradersTable.productionTime}
-            </tr>
+              <tr>
+                <td>Срок изготовления лота, дней</td>
+                {tradersTable.productionTime}
+              </tr>
 
-            <tr>
-              <td>Гарантийные обязательства, мес</td>
-              {tradersTable.warrantyPeriod}
-            </tr>
+              <tr>
+                <td>Гарантийные обязательства, мес</td>
+                {tradersTable.warrantyPeriod}
+              </tr>
 
-            <tr>
-              <td>Условия оплаты</td>
-              {tradersTable.paymentTerms}
-            </tr>
+              <tr>
+                <td>Условия оплаты</td>
+                {tradersTable.paymentTerms}
+              </tr>
 
-            <tr>
-              <td>Стоимость изготовления лота, руб (без НДС)</td>
-              {tradersTable.lotProductionCost}
-            </tr>
+              <tr>
+                <td>Стоимость изготовления лота, руб (без НДС)</td>
+                {tradersTable.lotProductionCost}
+              </tr>
 
-            <tr>
-              <td>Действия</td>
-              {tradersTable.actions}
-            </tr>
-          </tbody>
-        </table>
-        <button onClick={switchTimer} type="button" className="btn btn-primary">
-          Сделать ход
-        </button>
+              <tr>
+                <td>Действия</td>
+                {tradersTable.actions}
+              </tr>
+            </tbody>
+          </table>
+          <button onClick={switchTimer} type="button" className="btn btn-primary">
+            Сделать ход
+          </button>
+        </>
+        )}
       </div>
     </RoomContext.Provider>
   );
