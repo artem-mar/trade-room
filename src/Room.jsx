@@ -80,7 +80,8 @@ const Room = () => {
         'https://trade-room-7f3ef-default-rtdb.europe-west1.firebasedatabase.app/roomInfo/timerInfo.json',
         { startTime: Date.now(), startTraderId: nextId },
       );
-      setTimerInfo({ startTraderId, startTime: Date.now() });
+      setTimerInfo({ startTraderId: nextId, startTime: Date.now() });
+      setActiveTraderId(nextId);
     } catch (err) {
       /* eslint-disable-next-line no-console */
       console.log(err.message);
