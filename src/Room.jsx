@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
 import RoomContext from './context.js';
-import Timer from './Timer.jsx';
+import TableCell from './TableCell.jsx';
 import { getCurrentId } from './utils.jsx';
 
 const traderScheme = {
@@ -15,48 +15,17 @@ const traderScheme = {
   actions: [],
 };
 
-const renderTd = (params) => {
-  const {
-    id, key, value, i, activeTraderId,
-  } = params;
-
-  switch (key) {
-    case 'name':
-      return (
-        <td key={`${key} ${id}`} className="text-center px-5">
-          <span>{`участник №${i + 1}`}</span>
-          <p className="mb-0">{value}</p>
-        </td>
-      );
-    case 'id':
-      return (
-        <td
-          key={`${key} ${id}`}
-          className={`text-center px-5 ${activeTraderId === id && 'table-danger'}`}
-        >
-          {activeTraderId === id && <Timer />}
-        </td>
-      );
-    default:
-      return (
-        <td key={`${key} ${id}`} className="text-center px-5">
-          {value}
-        </td>
-      );
-  }
-};
-
 const Room = () => {
-  const [activeTraderId, setActiveTraderId] = useState(null);
-  const [startTime, setStartTime] = useState(Date.now());
+  const [{ startTraderId, startTime }, setTimerInfo] = useState({});
   const [traders, setTraders] = useState([]);
+  const [activeTraderId, setActiveTraderId] = useState(null);
   const [error, setError] = useState(null);
 
-  const setNextTraderId = () => {
-    const ids = traders.map(({ id }) => id);
-    const index = ids.indexOf(activeTraderId);
-    const newId = index === ids.length - 1 ? ids[0] : ids[index + 1];
-    setActiveTraderId(newId);
+  const setCurrentTraderId = () => {
+    const id = getCurrentId(traders, startTraderId, startTime);
+    if (activeTraderId !== id) {
+      setActiveTraderId(id);
+    }
   };
 
   useEffect(() => {
@@ -65,18 +34,21 @@ const Room = () => {
         const { data } = await axios.get(
           'https://trade-room-7f3ef-default-rtdb.europe-west1.firebasedatabase.app/roomInfo.json',
         );
+
+        const { traderList, timerInfo } = data;
+        setTimerInfo(timerInfo);
+        setTraders(traderList);
+
         setActiveTraderId(
-          getCurrentId(data.traders, data.timerInfo.startUserId, data.timerInfo.startTime),
+          getCurrentId(traderList, timerInfo.startTraderId, timerInfo.startTime),
         );
-        setStartTime(data.timerInfo.startTime);
-        setTraders(data.traders);
       } catch (err) {
         setError(err);
         throw err;
       }
     };
     fetchData();
-  }, [startTime, activeTraderId]);
+  }, [activeTraderId]);
 
   const tradersTable = traders.reduce((acc, trader, i) => {
     const entries = Object.entries(trader);
@@ -87,9 +59,12 @@ const Room = () => {
         ...ac,
         [key]: [
           ...ac[key],
-          renderTd({
-            id, key, value, i, activeTraderId,
-          }),
+          <TableCell
+            key={`${key} ${id}`}
+            params={{
+              id, key, value, i, activeTraderId,
+            }}
+          />,
         ],
       }),
       acc,
@@ -100,13 +75,12 @@ const Room = () => {
     try {
       const ids = traders.map(({ id }) => id);
       const index = ids.indexOf(activeTraderId);
-      const newId = index === ids.length - 1 ? ids[0] : ids[index + 1];
+      const nextId = index === ids.length - 1 ? ids[0] : ids[index + 1];
       await axios.put(
         'https://trade-room-7f3ef-default-rtdb.europe-west1.firebasedatabase.app/roomInfo/timerInfo.json',
-        { startTime: Date.now(), startUserId: newId },
+        { startTime: Date.now(), startTraderId: nextId },
       );
-      setStartTime(Date.now());
-      setActiveTraderId(newId);
+      setTimerInfo({ startTraderId, startTime: Date.now() });
     } catch (err) {
       /* eslint-disable-next-line no-console */
       console.log(err.message);
@@ -115,7 +89,7 @@ const Room = () => {
 
   return (
     <RoomContext.Provider
-      value={useMemo(() => ({ startTime, setNextTraderId }), [activeTraderId, startTime])}
+      value={useMemo(() => ({ startTime, setCurrentTraderId }), [activeTraderId, startTime])}
     >
       <div className="p-4">
         <div className="fs-5 text-danger">
@@ -147,27 +121,22 @@ const Room = () => {
                 <td>Наличие комплекса мероприятий, повышающих стандарты качества изготовления</td>
                 {tradersTable.qualityImprovement}
               </tr>
-
               <tr>
                 <td>Срок изготовления лота, дней</td>
                 {tradersTable.productionTime}
               </tr>
-
               <tr>
                 <td>Гарантийные обязательства, мес</td>
                 {tradersTable.warrantyPeriod}
               </tr>
-
               <tr>
                 <td>Условия оплаты</td>
                 {tradersTable.paymentTerms}
               </tr>
-
               <tr>
                 <td>Стоимость изготовления лота, руб (без НДС)</td>
                 {tradersTable.lotProductionCost}
               </tr>
-
               <tr>
                 <td>Действия</td>
                 {tradersTable.actions}
