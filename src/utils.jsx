@@ -1,6 +1,6 @@
 export const parseTime = (num) => {
-  const minutes = Math.trunc(num / 60) < 10 ? `0${Math.trunc(num / 60)}` : Math.trunc(num / 60);
-  const seconds = num % 60 < 10 ? `0${num % 60}` : num % 60;
+  const minutes = Math.trunc(num / 60).toString().padStart(2, '0');
+  const seconds = (num % 60).toString().padStart(2, '0');
   return [minutes, seconds].join(' : ');
 };
 
@@ -15,9 +15,9 @@ export const getCurrentId = (items, startingId, startTime) => {
   const timeDifferenceSec = Math.trunc((Date.now() - startTime) / 1000);
   const periodsNumber = Math.trunc(timeDifferenceSec / 120);
   const startingIdIndex = ids.indexOf(startingId);
-  const swipes = periodsNumber % ids.length;
-  const currentIdIndex = startingIdIndex + swipes >= ids.length
-    ? swipes - (ids.length - startingIdIndex)
-    : startingIdIndex + swipes;
+  const shifts = periodsNumber % ids.length;
+  const currentIdIndex = startingIdIndex + shifts >= ids.length
+    ? shifts - (ids.length - startingIdIndex)
+    : startingIdIndex + shifts;
   return ids[currentIdIndex];
 };
