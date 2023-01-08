@@ -3,16 +3,18 @@ import RoomContext from './context';
 import { getSecondsLeft, parseTime } from './utils';
 
 const Timer = () => {
-  const { startTime, setNextTraderId } = useContext(RoomContext);
+  const { startTime, setCurrentTraderId } = useContext(RoomContext);
   const [secondsLeft, setSecondsLeft] = useState(getSecondsLeft(startTime));
 
   useEffect(() => {
-    setTimeout(() => {
-      if (secondsLeft === 1) {
-        setNextTraderId();
+    const intervalId = setInterval(() => {
+      if (secondsLeft === 1 || secondsLeft === 120) {
+        setCurrentTraderId();
       }
       setSecondsLeft(getSecondsLeft(startTime));
     }, 1000);
+
+    return () => clearInterval(intervalId);
   }, [secondsLeft]);
 
   return <div className="text-danger">{parseTime(secondsLeft)}</div>;
